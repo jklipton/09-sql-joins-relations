@@ -3,10 +3,10 @@
 const pg = require('pg');
 const fs = require('fs');
 const express = require('express');
-const bodyParser = require('body-parser');
 const PORT = process.env.PORT || 3000;
 const app = express();
 
+// TODO: put in connection string
 const conString = '';
 const client = new pg.Client(conString);
 client.connect();
@@ -14,8 +14,8 @@ client.on('error', error => {
   console.error(error);
 });
 
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: true}));
+app.use(express.json());
+app.use(express.urlencoded({extended: true}));
 app.use(express.static('./public'));
 
 // REVIEW: These are routes for requesting HTML resources.
@@ -35,16 +35,26 @@ app.get('/articles', (request, response) => {
 });
 
 app.post('/articles', (request, response) => {
+  // Do we have an author_id for the author name sent in request.body?
   client.query(
+    // TODO: How do you ask the database if we have an id for this author name?
     '',
     [],
     function(err) {
       if (err) console.error(err);
       // REVIEW: This is our second query, to be executed when this first query is complete.
+      
+      // Depends on what we found (Yes author id, or No author id?)
+
+      // NO, create author
       queryTwo();
+
+      // YES skip right to
+      queryThree(/*author_id*/);
     }
   )
 
+  // TODO: this function inserts new authors
   function queryTwo() {
     client.query(
       ``,
@@ -58,6 +68,7 @@ app.post('/articles', (request, response) => {
     )
   }
 
+  // TODO: this function inserts the article
   function queryThree(author_id) {
     client.query(
       ``,

@@ -29,8 +29,7 @@ Article.fetchAll = callback => {
     .then(results => {
       Article.loadAll(results);
       callback();
-    }
-  )
+    });
 };
 
 Article.truncateTable = callback => {
