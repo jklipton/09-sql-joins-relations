@@ -6,7 +6,7 @@ const express = require('express');
 const PORT = process.env.PORT || 3000;
 const app = express();
 
-// TODO: put in connection string
+// TODOne: put in connection string
 const conString = 'postgres://postgres:grrrrr@LOCALHOST:5432/kilovolt';
 const client = new pg.Client(conString);
 client.connect();
@@ -54,7 +54,7 @@ app.post('/articles', (request, response) => { //eslint-disable-line
       console.log(err);
     });
 
-  // TODO: this function inserts new authors
+  // TODOne: this function inserts new authors
   function newAuthor() {
     client.query(
       `INSERT INTO 
@@ -70,7 +70,7 @@ app.post('/articles', (request, response) => { //eslint-disable-line
       });
   }
 
-  // TODO: this function inserts the article
+  // TODOne: this function inserts the article
   function newArticle(author_id) {
     client.query(
       `INSERT INTO
