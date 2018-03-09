@@ -39,23 +39,21 @@ app.post('/articles', (request, response) => {
   client.query(
     // TODOne: How do you ask the database if we have an id for this author name?
     'SELECT author_id FROM authors WHERE author = $1',
-    [request.params.author])
+    [request.body.author])
     .then ((result) => {
       // REVIEW: This is our second query, to be executed when this first query is complete.
 
       // Depends on what we found (Yes author id, or No author id?)
       // // YES skip right to
-      console.log('Author Id found: ' + result.rows[0].author_id);
-      queryThree(result.rows[0].author_id, request);
+      // // NO, create author
+      result.rows.length === 0 ? newAuthor() : newArticle ();
     })
     .catch ((err)=> {
-      // // NO, create author
-      console.log('No author ID found, error: ' + err);
-      queryTwo();
+      console.log(err);
     });
 
   // TODO: this function inserts new authors
-  function queryTwo() {
+  function newAuthor() {
     client.query(
       `INSERT INTO 
       authors(author, "authorUrl")
@@ -73,7 +71,7 @@ app.post('/articles', (request, response) => {
 
 
   // TODO: this function inserts the article
-  function queryThree(author_id) {
+  function newArticle(author_id) {
     client.query(
       `INSERT INTO
         articles(author_id, title, category, "publishedOn", body)
