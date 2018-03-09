@@ -25,7 +25,9 @@ app.get('/new', (request, response) => {
 
 // REVIEW: These are routes for making API calls to enact CRUD operations on our database.
 app.get('/articles', (request, response) => {
-  client.query(`SELECT * FROM articles JOIN authors`)
+  client.query(`
+  SELECT * FROM articles JOIN authors
+  ON articles.author_id = authors.author_id;`)
     .then(result => {
       response.send(result.rows);
     })
@@ -34,7 +36,7 @@ app.get('/articles', (request, response) => {
     });
 });
 
-app.post('/articles', (request, response) => {
+app.post('/articles', (request, response) => { //eslint-disable-line
   // Do we have an author_id for the author name sent in request.body?
   client.query(
     // TODOne: How do you ask the database if we have an id for this author name?
@@ -46,7 +48,7 @@ app.post('/articles', (request, response) => {
       // Depends on what we found (Yes author id, or No author id?)
       // // YES skip right to
       // // NO, create author
-      result.rows.length === 0 ? newAuthor() : newArticle ();
+      result.rows.length > 0 ? newArticle(result.rows[0].author_id) : newAuthor ();
     })
     .catch ((err)=> {
       console.log(err);
@@ -57,18 +59,16 @@ app.post('/articles', (request, response) => {
     client.query(
       `INSERT INTO 
       authors(author, "authorUrl")
-       VALUES ($1, $2)`,
+       VALUES ($1, $2)
+       RETURNING author_id`,
       [request.body.author, request.body.author_url])
-      .then ( () =>{
-        // console.log('Author ' + request.body.author + ', added.');
-        console.log('logging:' + result.rows[0].author_id);
-        queryThree(result.rows[0].author_id, request);
+      .then ( (result) =>{
+        newArticle(result.rows[0].author_id);
       })
       .catch ( (err)=> {
-        console.log('Error adding author: ' + err);
+        console.error(err);
       });
   }
-
 
   // TODO: this function inserts the article
   function newArticle(author_id) {
@@ -87,43 +87,43 @@ app.post('/articles', (request, response) => {
         console.log('New article addded by author_id: ' + author_id);
 
       })
-      .catch ( ()=> {
-        console.log('Error adding article at query three');
+      .catch ( (err)=> {
+        console.error(err);
       });
   }
 });
 
-app.put('/articles/:id', function(request, response) {
-  client.query(
-    `
-`,
+app.put('/articles/:id', (request, response) => {
+  const body = request.body;
+  const params = request.params;
+  Promise.all([
+    client.query(`
+      UPDATE authors
+      SET author=$1, author_url=$2
+      WHERE author_id=$3
+      `,
     [
-    ]
-  )
-    .then(() => {
-      client.query(
-        `UPDATE articles
-        SET
-        author_id=$1, title=$2, category=$3, "publishedOn"=$4, body=$5
-        WHERE article_id=$6;
-    `,
-        [
-          request.body.author_id,
-          request.body.title,
-          request.body.category,
-          request.body.publishedOn,
-          request.body.body,
-          request.params.id
-        ]
-      );
-    })
-    .then(() => {
-      response.send('Update complete');
-      console.log(request.body);
-    })
-    .catch(err => {
-      console.error(err);
-    });
+      body.author,
+      body.authorUrl,
+      body.author_id
+    ]),
+
+    client.query(`
+      UPDATE articles
+      SET author_id=$1, title=$2, category=$3, published_on=$4, body=$5
+      WHERE article_id=$6
+      `,
+    [
+      body.author_id,
+      body.title,
+      body.category,
+      body.publishedOn,
+      body.body,
+      params.id
+    ])
+  ])
+    .then(() => response.send('Article updated at author ID' + body.author_id))
+    .catch(console.error);
 });
 
 app.delete('/articles/:id', (request, response) => {
