@@ -26,7 +26,8 @@ app.get('/new', (request, response) => {
 // REVIEW: These are routes for making API calls to enact CRUD operations on our database.
 app.get('/articles', (request, response) => {
   client.query(`
-  SELECT * FROM articles JOIN authors
+  SELECT * FROM articles 
+  INNER JOIN authors
   ON articles.author_id = authors.author_id;`)
     .then(result => {
       response.send(result.rows);
@@ -40,7 +41,7 @@ app.post('/articles', (request, response) => { //eslint-disable-line
   // Do we have an author_id for the author name sent in request.body?
   client.query(
     // TODOne: How do you ask the database if we have an id for this author name?
-    'SELECT author_id FROM authors WHERE author = $1',
+    `SELECT author_id FROM authors WHERE author = $1`,
     [request.body.author])
     .then ((result) => {
       // REVIEW: This is our second query, to be executed when this first query is complete.
@@ -58,7 +59,7 @@ app.post('/articles', (request, response) => { //eslint-disable-line
   function newAuthor() {
     client.query(
       `INSERT INTO 
-      authors(author, "authorUrl")
+      authors(author, "author_url")
        VALUES ($1, $2)
        RETURNING author_id`,
       [request.body.author, request.body.author_url])
@@ -74,7 +75,7 @@ app.post('/articles', (request, response) => { //eslint-disable-line
   function newArticle(author_id) {
     client.query(
       `INSERT INTO
-        articles(author_id, title, category, "publishedOn", body)
+        articles(author_id, title, category, "published_on", body)
         VALUES ($1, $2, $3, $4, $5);
     `,
       [ author_id,
@@ -165,7 +166,7 @@ function loadAuthors() {
   fs.readFile('./public/data/hackerIpsum.json', 'utf8', (err, fd) => {
     JSON.parse(fd).forEach(ele => {
       client.query(
-        'INSERT INTO authors(author, "authorUrl") VALUES($1, $2) ON CONFLICT DO NOTHING',
+        'INSERT INTO authors(author, "author_url") VALUES($1, $2) ON CONFLICT DO NOTHING',
         [ele.author, ele.authorUrl]
       );
     });
@@ -202,7 +203,7 @@ function loadDB() {
     authors (
       author_id SERIAL PRIMARY KEY,
       author VARCHAR(255) UNIQUE NOT NULL,
-      "authorUrl" VARCHAR (255)
+      "author_url" VARCHAR (255)
     );`
   )
     .then(data => {
@@ -219,7 +220,7 @@ function loadDB() {
       author_id INTEGER NOT NULL REFERENCES authors(author_id),
       title VARCHAR(255) NOT NULL,
       category VARCHAR(20),
-      "publishedOn" DATE,
+      "published_on" DATE,
       body TEXT NOT NULL
     );`
   )
