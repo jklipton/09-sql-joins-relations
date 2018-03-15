@@ -2,7 +2,7 @@
 
 function Article (rawDataObj) {
   Object.keys(rawDataObj).forEach(key => {
-    this[key] = rawDataObj[key]
+    this[key] = rawDataObj[key];
   }, this);
 }
 
@@ -19,9 +19,9 @@ Article.prototype.toHtml = function() {
 };
 
 Article.loadAll = articleData => {
-  articleData.sort((a,b) => (new Date(b.publishedOn)) - (new Date(a.publishedOn)))
+  articleData.sort((a,b) => (new Date(b.publishedOn)) - (new Date(a.publishedOn)));
 
-  articleData.forEach(articleObject => Article.all.push(new Article(articleObject)))
+  articleData.forEach(articleObject => Article.all.push(new Article(articleObject)));
 };
 
 Article.fetchAll = callback => {
@@ -37,18 +37,18 @@ Article.truncateTable = callback => {
     url: '/articles',
     method: 'DELETE',
   })
-  .then(data => {
-    console.log(data);
-    if (callback) callback();
-  });
+    .then(data => {
+      console.log(data);
+      if (callback) callback();
+    });
 };
 
 Article.prototype.insertRecord = function(callback) {
-  $.post('/articles', {author: this.author, authorUrl: this.authorUrl, body: this.body, category: this.category, publishedOn: this.publishedOn, title: this.title})
-  .then(data => {
-    console.log(data);
-    if (callback) callback();
-  })
+  $.post(`/articles`, {author: this.author, authorUrl: this.authorUrl, body: this.body, category: this.category, publishedOn: this.publishedOn, title: this.title})
+    .then(data => {
+      console.log(data);
+      if (callback) callback();
+    });
 };
 
 Article.prototype.deleteRecord = function(callback) {
@@ -56,10 +56,10 @@ Article.prototype.deleteRecord = function(callback) {
     url: `/articles/${this.article_id}`,
     method: 'DELETE'
   })
-  .then(data => {
-    console.log(data);
-    if (callback) callback();
-  });
+    .then(data => {
+      console.log(data);
+      if (callback) callback();
+    });
 };
 
 Article.prototype.updateRecord = function(callback) {
@@ -76,8 +76,8 @@ Article.prototype.updateRecord = function(callback) {
       author_id: this.author_id
     }
   })
-  .then(data => {
-    console.log(data);
-    if (callback) callback();
-  });
+    .then(data => {
+      console.log(data);
+      if (callback) callback();
+    });
 };

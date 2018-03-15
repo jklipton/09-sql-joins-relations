@@ -6,8 +6,8 @@ const express = require('express');
 const PORT = process.env.PORT || 3000;
 const app = express();
 
-// TODO: put in connection string
-const conString = '';
+// TODOne: put in connection string
+const conString = 'postgres://postgres:grrrrr@LOCALHOST:5432/kilovolt';
 const client = new pg.Client(conString);
 client.connect();
 client.on('error', error => {
@@ -25,79 +25,106 @@ app.get('/new', (request, response) => {
 
 // REVIEW: These are routes for making API calls to enact CRUD operations on our database.
 app.get('/articles', (request, response) => {
-  client.query(``)
+  client.query(`
+  SELECT * FROM articles 
+  INNER JOIN authors
+  ON articles.author_id = authors.author_id;`)
     .then(result => {
       response.send(result.rows);
     })
     .catch(err => {
-      console.error(err)
+      console.error(err);
     });
 });
 
-app.post('/articles', (request, response) => {
+app.post('/articles', (request, response) => { //eslint-disable-line
   // Do we have an author_id for the author name sent in request.body?
   client.query(
-    // TODO: How do you ask the database if we have an id for this author name?
-    '',
-    [],
-    function(err) {
-      if (err) console.error(err);
+    // TODOne: How do you ask the database if we have an id for this author name?
+    `SELECT author_id FROM authors WHERE author = $1`,
+    [request.body.author])
+    .then ((result) => {
       // REVIEW: This is our second query, to be executed when this first query is complete.
-      
+
       // Depends on what we found (Yes author id, or No author id?)
+      // // YES skip right to
+      // // NO, create author
+      result.rows.length > 0 ? newArticle(result.rows[0].author_id) : newAuthor ();
+    })
+    .catch ((err)=> {
+      console.log(err);
+    });
 
-      // NO, create author
-      queryTwo();
-
-      // YES skip right to
-      queryThree(/*author_id*/);
-    }
-  )
-
-  // TODO: this function inserts new authors
-  function queryTwo() {
+  // TODOne: this function inserts new authors
+  function newAuthor() {
     client.query(
-      ``,
-      [],
-      function(err, result) {
-        if (err) console.error(err);
-
-        // REVIEW: This is our third query, to be executed when the second is complete. We are also passing the author_id into our third query.
-        queryThree(result.rows[0].author_id);
-      }
-    )
+      `INSERT INTO 
+      authors(author, "author_url")
+       VALUES ($1, $2)
+       RETURNING author_id`,
+      [request.body.author, request.body.author_url])
+      .then ( (result) =>{
+        newArticle(result.rows[0].author_id);
+      })
+      .catch ( (err)=> {
+        console.error(err);
+      });
   }
 
-  // TODO: this function inserts the article
-  function queryThree(author_id) {
+  // TODOne: this function inserts the article
+  function newArticle(author_id) {
     client.query(
-      ``,
-      [],
-      function(err) {
-        if (err) console.error(err);
-        response.send('insert complete');
-      }
-    );
+      `INSERT INTO
+        articles(author_id, title, category, "published_on", body)
+        VALUES ($1, $2, $3, $4, $5);
+    `,
+      [ author_id,
+        request.body.title,
+        request.body.category,
+        request.body.publishedOn,
+        request.body.body
+      ])
+      .then ( () =>{
+        console.log('New article addded by author_id: ' + author_id);
+
+      })
+      .catch ( (err)=> {
+        console.error(err);
+      });
   }
 });
 
-app.put('/articles/:id', function(request, response) {
-  client.query(
-    ``,
-    []
-  )
-    .then(() => {
-      client.query(
-        ``,
-        []
-      )
-    })
-    .then(() => {
-      response.send('Update complete');
-    })
-    .catch(err => {
-      console.error(err);
-    })
+app.put('/articles/:id', (request, response) => {
+  const body = request.body;
+  const params = request.params;
+  Promise.all([
+    client.query(`
+      UPDATE authors
+      SET author=$1, author_url=$2
+      WHERE author_id=$3
+      `,
+    [
+      body.author,
+      body.authorUrl,
+      body.author_id
+    ]),
+
+    client.query(`
+      UPDATE articles
+      SET author_id=$1, title=$2, category=$3, published_on=$4, body=$5
+      WHERE article_id=$6
+      `,
+    [
+      body.author_id,
+      body.title,
+      body.category,
+      body.publishedOn,
+      body.body,
+      params.id
+    ])
+  ])
+    .then(() => response.send('Article updated at author ID' + body.author_id))
+    .catch(console.error);
 });
 
 app.delete('/articles/:id', (request, response) => {
@@ -109,7 +136,7 @@ app.delete('/articles/:id', (request, response) => {
       response.send('Delete complete');
     })
     .catch(err => {
-      console.error(err)
+      console.error(err);
     });
 });
 
@@ -119,7 +146,7 @@ app.delete('/articles', (request, response) => {
       response.send('Delete complete');
     })
     .catch(err => {
-      console.error(err)
+      console.error(err);
     });
 });
 
@@ -139,11 +166,11 @@ function loadAuthors() {
   fs.readFile('./public/data/hackerIpsum.json', 'utf8', (err, fd) => {
     JSON.parse(fd).forEach(ele => {
       client.query(
-        'INSERT INTO authors(author, "authorUrl") VALUES($1, $2) ON CONFLICT DO NOTHING',
+        'INSERT INTO authors(author, "author_url") VALUES($1, $2) ON CONFLICT DO NOTHING',
         [ele.author, ele.authorUrl]
-      )
-    })
-  })
+      );
+    });
+  });
 }
 
 // REVIEW: This helper function will load articles into the DB if the DB is empty.
@@ -160,12 +187,12 @@ function loadArticles() {
             FROM authors
             WHERE author=$5;
             `,
-              [ele.title, ele.category, ele.publishedOn, ele.body, ele.author]
-            )
-          })
-        })
+            [ele.title, ele.category, ele.publishedOn, ele.body, ele.author]
+            );
+          });
+        });
       }
-    })
+    });
 }
 
 // REVIEW: Below are two queries, wrapped in the loadDB() function, which create separate tables in our DB, and create a relationship between the authors and articles tables.
@@ -176,14 +203,14 @@ function loadDB() {
     authors (
       author_id SERIAL PRIMARY KEY,
       author VARCHAR(255) UNIQUE NOT NULL,
-      "authorUrl" VARCHAR (255)
+      "author_url" VARCHAR (255)
     );`
   )
     .then(data => {
       loadAuthors(data);
     })
     .catch(err => {
-      console.error(err)
+      console.error(err);
     });
 
   client.query(`
@@ -193,7 +220,7 @@ function loadDB() {
       author_id INTEGER NOT NULL REFERENCES authors(author_id),
       title VARCHAR(255) NOT NULL,
       category VARCHAR(20),
-      "publishedOn" DATE,
+      "published_on" DATE,
       body TEXT NOT NULL
     );`
   )
@@ -201,6 +228,6 @@ function loadDB() {
       loadArticles(data);
     })
     .catch(err => {
-      console.error(err)
+      console.error(err);
     });
 }

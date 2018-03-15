@@ -116,7 +116,7 @@ articleView.submit = event => {
   });
 
   article.insertRecord();
-}
+};
 
 articleView.initIndexPage = () => {
   Article.all.forEach(article => {
